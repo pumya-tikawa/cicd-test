@@ -1,11 +1,205 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>Hello CI/CD</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>わたしのホームページ</title>
+<style>
+  :root {
+    --sky: #b8e3dd;      /* 背景 */
+    --ink: #1c1b33;      /* 文字・枠線 */
+    --win: #f6fbff;      /* ウィンドウの中身 */
+    --bar: #2d3fa6;      /* タイトルバー */
+    --sun: #ffd23f;      /* 強調 */
+    --coral: #ff6b5b;    /* ボタン */
+    --ok: #1f9d6b;       /* 完了 */
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    line-height: 1.8;
+    background-color: var(--sky);
+    background-image: radial-gradient(rgba(28,27,51,.14) 1.2px, transparent 1.2px);
+    background-size: 18px 18px;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 56px; display: grid; gap: 28px; }
+
+  .win {
+    background: var(--win);
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    box-shadow: 7px 7px 0 var(--ink);
+    overflow: hidden;
+  }
+  .bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 12px;
+    background: var(--bar); color: #fff;
+    font-size: .9rem; font-weight: 700;
+    border-bottom: 3px solid var(--ink);
+  }
+  .dots { display: flex; gap: 5px; }
+  .dots i { width: 11px; height: 11px; background: var(--sun); border: 2px solid var(--ink); display: block; }
+  .body { padding: 22px 24px 26px; }
+
+  h1 {
+    margin: 0 0 14px;
+    font-size: clamp(1.9rem, 6.4vw, 3.1rem);
+    line-height: 1.25;
+    font-weight: 900;
+    letter-spacing: -.01em;
+  }
+  h2 { margin: 0 0 8px; font-size: 1.15rem; }
+  p { margin: 0 0 12px; max-width: 38em; }
+  .sun { background: linear-gradient(transparent 58%, var(--sun) 58%); }
+
+  /* デプロイ体験 */
+  .push {
+    font: inherit; font-weight: 800;
+    color: #fff; background: var(--coral);
+    border: 3px solid var(--ink); border-radius: 6px;
+    padding: 10px 20px; cursor: pointer;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: transform .08s, box-shadow .08s;
+  }
+  .push:hover:not(:disabled) { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 var(--ink); }
+  .push:active:not(:disabled) { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--ink); }
+  .push:disabled { background: #b9b7c9; cursor: progress; }
+  :focus-visible { outline: 3px solid var(--bar); outline-offset: 3px; }
+
+  .steps { list-style: none; margin: 18px 0 14px; padding: 0; display: grid; gap: 6px; }
+  .steps li { display: flex; gap: 10px; align-items: baseline; color: #77759a; }
+  .steps li::before { content: "○"; width: 1.2em; text-align: center; }
+  .steps li.active { color: var(--ink); font-weight: 800; }
+  .steps li.active::before { content: "▶"; color: var(--coral); }
+  .steps li.done { color: var(--ink); }
+  .steps li.done::before { content: "●"; color: var(--ok); }
+
+  pre#log {
+    margin: 0; min-height: 7.5em;
+    padding: 12px 14px;
+    background: var(--ink); color: #e6ffd9;
+    border-radius: 6px;
+    font: .85rem/1.7 ui-monospace, "Cascadia Mono", Consolas, monospace;
+    white-space: pre-wrap;
+  }
+  .live { margin-top: 14px; font-weight: 800; }
+  .live b { background: var(--sun); padding: 0 .4em; border: 2px solid var(--ink); }
+
+  /* リンク・プロフィール */
+  dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; }
+  dt { font-weight: 800; }
+  dd { margin: 0; }
+  a { color: var(--bar); font-weight: 700; }
+
+  footer { text-align: center; font-size: .85rem; }
+  .counter { display: inline-block; margin-top: 6px; padding: 2px 10px; background: var(--ink); color: var(--sun); font-family: ui-monospace, Consolas, monospace; border-radius: 4px; }
+
+  @media (max-width: 520px) { .body { padding: 18px 16px 22px; } dl { grid-template-columns: 1fr; gap: 0; } dd { margin-bottom: 10px; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .push { transition: none; } }
+</style>
 </head>
 <body>
-  <h1>Hello from S3 + GitHub Actions!</h1>
-  <p>Version 2</p>
+<main>
+
+  <!-- ① 自己紹介（ここを書き換える） -->
+  <section class="win" aria-labelledby="hello">
+    <div class="bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>ようこそ.txt</div>
+    <div class="body">
+      <h1 id="hello">push したら、<br>世界に公開された。</h1>
+      <p>はじめまして、<span class="sun">ぷみゃ</span>です。ここは、CloudFormation で作った S3 バケットの上で動いている、ぷみゃのホームページです。</p>
+      <p>ファイルを書き換えて git push すると、GitHub Actions が自動でここを更新してくれるよ！</p>
+    </div>
+  </section>
+
+  <!-- ② デプロイ体験（ボタンを押すと流れを再現） -->
+  <section class="win" aria-labelledby="deploy">
+    <div class="bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>デプロイしてみる.exe</div>
+    <div class="body">
+      <h2 id="deploy">push から公開までの流れ</h2>
+      <p>ボタンを押すと、わたしが push したときに裏で起きていることを順に再現します。</p>
+      <button class="push" id="push" type="button">git push する</button>
+      <ol class="steps" id="steps">
+        <li>git push で GitHub に送る</li>
+        <li>GitHub Actions が起動する</li>
+        <li>OIDC で AWS のロールを借りる</li>
+        <li>aws s3 sync でバケットに反映する</li>
+      </ol>
+      <pre id="log" aria-live="polite">$ ready. ボタンを押してください</pre>
+      <p class="live">いま公開中のバージョン: <b id="ver">1</b></p>
+    </div>
+  </section>
+
+  <!-- ③ プロフィール（ここも書き換える） -->
+  <section class="win" aria-labelledby="about">
+    <div class="bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>わたしについて.ini</div>
+    <div class="body">
+      <h2 id="about">いま取り組んでいること</h2>
+      <dl>
+        <dt>勉強中</dt><dd>AWS、CloudFormation、CI/CD</dd>
+        <dt>作ったもの</dt><dd>S3 の静的サイトと、自動デプロイの仕組み</dd>
+        <dt>次にやること</dt><dd>CloudFront で HTTPS にする</dd>
+        <dt>リンク</dt><dd><a href="https://github.com/" rel="noopener">GitHub</a></dd>
+      </dl>
+    </div>
+  </section>
+
+  <footer>
+    このページは GitHub Actions で S3 に自動デプロイされています。<br>
+    <span class="counter" id="visits">…</span>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var btn = document.getElementById("push");
+  var items = document.querySelectorAll("#steps li");
+  var log = document.getElementById("log");
+  var ver = document.getElementById("ver");
+  var lines = [
+    "$ git push origin main",
+    "remote: workflow 'Deploy static site to S3' started",
+    "sts: AssumeRoleWithWebIdentity ... ok",
+    "upload: site/index.html to s3://pumya-cicd/index.html"
+  ];
+  var running = false;
+
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, reduce ? 0 : ms); }); }
+
+  btn.addEventListener("click", async function () {
+    if (running) return;
+    running = true;
+    btn.disabled = true;
+    log.textContent = "";
+    items.forEach(function (li) { li.className = ""; });
+
+    for (var i = 0; i < items.length; i++) {
+      items[i].className = "active";
+      log.textContent += lines[i] + "\n";
+      await wait(800);
+      items[i].className = "done";
+    }
+    ver.textContent = String(Number(ver.textContent) + 1);
+    log.textContent += "done. サイトが更新されました (Version " + ver.textContent + ")";
+    btn.textContent = "もう一度 push する";
+    btn.disabled = false;
+    running = false;
+  });
+
+  // 訪問回数（このブラウザの中だけで数えます）
+  var el = document.getElementById("visits");
+  try {
+    var n = Number(localStorage.getItem("visits") || 0) + 1;
+    localStorage.setItem("visits", String(n));
+    el.textContent = "あなたの訪問 " + n + " 回目";
+  } catch (e) {
+    el.textContent = "ようこそ";
+  }
+})();
+</script>
 </body>
 </html>
