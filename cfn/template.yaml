@@ -76,7 +76,7 @@ Resources:
                   - !Sub 'repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/main'
       Policies:
         - PolicyName: DeployToSiteBucket
-          PolicyDocument:
+          PolicyDocumentt:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
