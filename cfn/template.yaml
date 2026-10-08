@@ -74,7 +74,6 @@ Resources:
               StringLike:
                 token.actions.githubusercontent.com:sub:
                   - !Sub 'repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/main'
-                  - !Sub 'repo:${GitHubOrg}@*/${GitHubRepo}@*:ref:refs/heads/main'
       Policies:
         - PolicyName: DeployToSiteBucket
           PolicyDocument:
