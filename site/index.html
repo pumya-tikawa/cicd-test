@@ -87,7 +87,7 @@ function findAnyMove(b) {
 
 // ---- 必ずクリアできる盤面の生成(消す手順を逆再生する) ----
 // 全マス空の状態から「空きマスcから上下左右に見える位置に、同じ色を2〜4個置く」を繰り返す。
-// 置いた順の逆にcをクリックしていけば、必ず全部消せる。
+// 置いた順の逆にcをクリックしていけば、必ず全部消せるよね。
 function build(total) {
   if (total < 2) return null;
   const b = new Array(N * N).fill(-1);
