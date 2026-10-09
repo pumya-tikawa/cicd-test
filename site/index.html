@@ -3,203 +3,234 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>わたしのホームページ</title>
+<title>カラータイル</title>
 <style>
-  :root {
-    --sky: #b8e3dd;      /* 背景 */
-    --ink: #1c1b33;      /* 文字・枠線 */
-    --win: #f6fbff;      /* ウィンドウの中身 */
-    --bar: #2d3fa6;      /* タイトルバー */
-    --sun: #ffd23f;      /* 強調 */
-    --coral: #ff6b5b;    /* ボタン */
-    --ok: #1f9d6b;       /* 完了 */
+  body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 16px; }
+  #info { margin: 8px 0; font-size: 18px; }
+  #msg { height: 24px; color: #d84315; font-size: 14px; }
+  #board {
+    display: grid; grid-template-columns: repeat(10, 1fr);
+    gap: 3px; width: min(92vw, 480px); margin: 0 auto;
+    background: #ddd; padding: 3px; border-radius: 6px;
   }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body {
-    margin: 0;
-    color: var(--ink);
-    font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
-    line-height: 1.8;
-    background-color: var(--sky);
-    background-image: radial-gradient(rgba(28,27,51,.14) 1.2px, transparent 1.2px);
-    background-size: 18px 18px;
-  }
-  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 56px; display: grid; gap: 28px; }
-
-  .win {
-    background: var(--win);
-    border: 3px solid var(--ink);
-    border-radius: 8px;
-    box-shadow: 7px 7px 0 var(--ink);
-    overflow: hidden;
-  }
-  .bar {
-    display: flex; align-items: center; gap: 10px;
-    padding: 6px 12px;
-    background: var(--bar); color: #fff;
-    font-size: .9rem; font-weight: 700;
-    border-bottom: 3px solid var(--ink);
-  }
-  .dots { display: flex; gap: 5px; }
-  .dots i { width: 11px; height: 11px; background: var(--sun); border: 2px solid var(--ink); display: block; }
-  .body { padding: 22px 24px 26px; }
-
-  h1 {
-    margin: 0 0 14px;
-    font-size: clamp(1.9rem, 6.4vw, 3.1rem);
-    line-height: 1.25;
-    font-weight: 900;
-    letter-spacing: -.01em;
-  }
-  h2 { margin: 0 0 8px; font-size: 1.15rem; }
-  p { margin: 0 0 12px; max-width: 38em; }
-  .sun { background: linear-gradient(transparent 58%, var(--sun) 58%); }
-
-  /* デプロイ体験 */
-  .push {
-    font: inherit; font-weight: 800;
-    color: #fff; background: var(--coral);
-    border: 3px solid var(--ink); border-radius: 6px;
-    padding: 10px 20px; cursor: pointer;
-    box-shadow: 4px 4px 0 var(--ink);
-    transition: transform .08s, box-shadow .08s;
-  }
-  .push:hover:not(:disabled) { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 var(--ink); }
-  .push:active:not(:disabled) { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--ink); }
-  .push:disabled { background: #b9b7c9; cursor: progress; }
-  :focus-visible { outline: 3px solid var(--bar); outline-offset: 3px; }
-
-  .steps { list-style: none; margin: 18px 0 14px; padding: 0; display: grid; gap: 6px; }
-  .steps li { display: flex; gap: 10px; align-items: baseline; color: #77759a; }
-  .steps li::before { content: "○"; width: 1.2em; text-align: center; }
-  .steps li.active { color: var(--ink); font-weight: 800; }
-  .steps li.active::before { content: "▶"; color: var(--coral); }
-  .steps li.done { color: var(--ink); }
-  .steps li.done::before { content: "●"; color: var(--ok); }
-
-  pre#log {
-    margin: 0; min-height: 7.5em;
-    padding: 12px 14px;
-    background: var(--ink); color: #e6ffd9;
-    border-radius: 6px;
-    font: .85rem/1.7 ui-monospace, "Cascadia Mono", Consolas, monospace;
-    white-space: pre-wrap;
-  }
-  .live { margin-top: 14px; font-weight: 800; }
-  .live b { background: var(--sun); padding: 0 .4em; border: 2px solid var(--ink); }
-
-  /* リンク・プロフィール */
-  dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; }
-  dt { font-weight: 800; }
-  dd { margin: 0; }
-  a { color: var(--bar); font-weight: 700; }
-
-  footer { text-align: center; font-size: .85rem; }
-  .counter { display: inline-block; margin-top: 6px; padding: 2px 10px; background: var(--ink); color: var(--sun); font-family: ui-monospace, Consolas, monospace; border-radius: 4px; }
-
-  @media (max-width: 520px) { .body { padding: 18px 16px 22px; } dl { grid-template-columns: 1fr; gap: 0; } dd { margin-bottom: 10px; } }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .push { transition: none; } }
+  .cell { aspect-ratio: 1; border-radius: 4px; }
+  .tile { pointer-events: none; }
+  .empty { background: #ddd; cursor: pointer; }
+  .empty:hover { background: #ccc; }
+  .shake { animation: shake .25s; }
+  .hint { outline: 3px solid #000; }
+  @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+  button { font-size: 15px; padding: 6px 14px; margin: 10px 4px; cursor: pointer; }
 </style>
 </head>
 <body>
-<main>
-
-  <!-- ① 自己紹介（ここを書き換える） -->
-  <section class="win" aria-labelledby="hello">
-    <div class="bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>ようこそ.txt</div>
-    <div class="body">
-      <h1 id="hello">push したら、<br>世界に公開された。</h1>
-      <p>はじめまして、<span class="sun">ぷみゃ</span>です。ここは、CloudFormation で作った S3 バケットの上で動いている、ぷみゃのホームページです。</p>
-      <p>ファイルを書き換えて git push すると、GitHub Actions が自動でここを更新してくれるよ！</p>
-    </div>
-  </section>
-
-  <!-- ② デプロイ体験（ボタンを押すと流れを再現） -->
-  <section class="win" aria-labelledby="deploy">
-    <div class="bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>デプロイしてみる.exe</div>
-    <div class="body">
-      <h2 id="deploy">push から公開までの流れ</h2>
-      <p>ボタンを押すと、わたしが push したときに裏で起きていることを順に再現します。</p>
-      <button class="push" id="push" type="button">git push する</button>
-      <ol class="steps" id="steps">
-        <li>git push で GitHub に送る</li>
-        <li>GitHub Actions が起動する</li>
-        <li>OIDC で AWS のロールを借りる</li>
-        <li>aws s3 sync でバケットに反映する</li>
-      </ol>
-      <pre id="log" aria-live="polite">$ ready. ボタンを押してください</pre>
-      <p class="live">いま公開中のバージョン: <b id="ver">1</b></p>
-    </div>
-  </section>
-
-  <!-- ③ プロフィール（ここも書き換える） -->
-  <section class="win" aria-labelledby="about">
-    <div class="bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>わたしについて.ini</div>
-    <div class="body">
-      <h2 id="about">いま取り組んでいること</h2>
-      <dl>
-        <dt>勉強中</dt><dd>AWS、CloudFormation、CI/CD</dd>
-        <dt>作ったもの</dt><dd>S3 の静的サイトと、自動デプロイの仕組み</dd>
-        <dt>次にやること</dt><dd>CloudFront で HTTPS にする</dd>
-        <dt>リンク</dt><dd><a href="https://github.com/" rel="noopener">GitHub</a></dd>
-      </dl>
-    </div>
-  </section>
-
-  <footer>
-    このページは GitHub Actions で S3 に自動デプロイされています。<br>
-    <span class="counter" id="visits">…</span>
-  </footer>
-</main>
+  <h1>カラータイル</h1>
+  <div id="info">残り: <span id="left">0</span> マス ／ ミス: <span id="miss">0</span></div>
+  <div id="msg"></div>
+  <div id="board"></div>
+  <button id="newBtn">新しいゲーム</button>
+  <button id="hintBtn">ヒント</button>
 
 <script>
-(function () {
-  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var btn = document.getElementById("push");
-  var items = document.querySelectorAll("#steps li");
-  var log = document.getElementById("log");
-  var ver = document.getElementById("ver");
-  var lines = [
-    "$ git push origin main",
-    "remote: workflow 'Deploy static site to S3' started",
-    "sts: AssumeRoleWithWebIdentity ... ok",
-    "upload: site/index.html to s3://pumya-cicd/index.html"
-  ];
-  var running = false;
+const N = 10;
+const COLORS = ["#e53935", "#fdd835", "#fb8c00", "#f48fb1", "#1e88e5", "#43a047", "#8e24aa", "#6d4c41"];
+const NC = COLORS.length;
+const DIRS = [[0,1],[0,-1],[1,0],[-1,0]];
+const START_EMPTY = 12; // 最初の空きマスの数
 
-  function wait(ms) { return new Promise(function (r) { setTimeout(r, reduce ? 0 : ms); }); }
+const idx = (r, c) => r * N + c;
+const inBounds = (r, c) => r >= 0 && r < N && c >= 0 && c < N;
+const rand = n => Math.floor(Math.random() * n);
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-  btn.addEventListener("click", async function () {
-    if (running) return;
-    running = true;
-    btn.disabled = true;
-    log.textContent = "";
-    items.forEach(function (li) { li.className = ""; });
-
-    for (var i = 0; i < items.length; i++) {
-      items[i].className = "active";
-      log.textContent += lines[i] + "\n";
-      await wait(800);
-      items[i].className = "done";
-    }
-    ver.textContent = String(Number(ver.textContent) + 1);
-    log.textContent += "done. サイトが更新されました (Version " + ver.textContent + ")";
-    btn.textContent = "もう一度 push する";
-    btn.disabled = false;
-    running = false;
-  });
-
-  // 訪問回数（このブラウザの中だけで数えます）
-  var el = document.getElementById("visits");
-  try {
-    var n = Number(localStorage.getItem("visits") || 0) + 1;
-    localStorage.setItem("visits", String(n));
-    el.textContent = "あなたの訪問 " + n + " 回目";
-  } catch (e) {
-    el.textContent = "ようこそ";
+// ---- ゲームのルール ----
+// 空きマスiから上下左右に見て、最初に見えるタイル
+function visibleFrom(i, b) {
+  const r = Math.floor(i / N), c = i % N, res = [];
+  for (const [dr, dc] of DIRS) {
+    let rr = r + dr, cc = c + dc;
+    while (inBounds(rr, cc) && b[idx(rr, cc)] < 0) { rr += dr; cc += dc; }
+    if (inBounds(rr, cc)) res.push(idx(rr, cc));
   }
-})();
+  return res;
+}
+
+// 空きマスiをクリックしたときに消えるタイル(同じ色が2つ以上見えている色)
+function getRemovals(i, b) {
+  const by = {};
+  for (const t of visibleFrom(i, b)) (by[b[t]] ||= []).push(t);
+  const out = [];
+  for (const k in by) if (by[k].length >= 2) out.push(...by[k]);
+  return out;
+}
+
+function findAnyMove(b) {
+  for (let i = 0; i < N * N; i++) {
+    if (b[i] < 0) {
+      const rm = getRemovals(i, b);
+      if (rm.length) return { cell: i, tiles: rm };
+    }
+  }
+  return null;
+}
+
+// ---- 必ずクリアできる盤面の生成(消す手順を逆再生する) ----
+// 全マス空の状態から「空きマスcから上下左右に見える位置に、同じ色を2〜4個置く」を繰り返す。
+// 置いた順の逆にcをクリックしていけば、必ず全部消せる。
+// cells=null なら全マスに置ける。total=置くタイルの数
+function build(cells, total) {
+  const isTarget = new Array(N * N).fill(cells === null);
+  if (cells) cells.forEach(i => isTarget[i] = true);
+  if (total === undefined) total = cells.length;
+  if (total < 2) return null;
+  const b = new Array(N * N).fill(-1);
+  let remaining = total;
+  while (remaining > 0) {
+    const srcs = [];
+    for (let i = 0; i < N * N; i++) if (b[i] < 0) srcs.push(i);
+    shuffle(srcs);
+    let done = false;
+    for (const c of srcs) {
+      const r = Math.floor(c / N), c0 = c % N;
+      const info = DIRS.map(([dr, dc]) => {
+        const list = []; let first = -1;
+        let rr = r + dr, cc = c0 + dc;
+        while (inBounds(rr, cc)) {
+          const j = idx(rr, cc);
+          if (b[j] >= 0) { first = b[j]; break; }
+          if (isTarget[j]) list.push(j);
+          rr += dr; cc += dc;
+        }
+        return { list, first };
+      });
+      const avail = [];
+      info.forEach((x, k) => { if (x.list.length) avail.push(k); });
+      if (avail.length < 2) continue;
+      for (let tr = 0; tr < 6 && !done; tr++) {
+        shuffle(avail);
+        const cnts = [];
+        for (let n = 2; n <= Math.min(4, avail.length, remaining); n++) if (remaining - n !== 1) cnts.push(n);
+        if (!cnts.length) break;
+        const cnt = cnts[rand(cnts.length)];
+        const dirs = avail.slice(0, cnt);
+        // 使わない方向に見えるタイルが巻き込まれないように色を選ぶ
+        const others = info.map((x, k) => dirs.includes(k) ? -1 : x.first).filter(v => v >= 0);
+        if (new Set(others).size !== others.length) continue;
+        const allowed = [];
+        for (let k = 0; k < NC; k++) if (!others.includes(k)) allowed.push(k);
+        const color = allowed[rand(allowed.length)];
+        const tiles = dirs.map(k => { const L = info[k].list; return L[L.length - 1]; });
+        tiles.forEach(t => b[t] = color);
+        remaining -= tiles.length;
+        done = true;
+      }
+      if (done) break;
+    }
+    if (!done) return null;
+  }
+  return b;
+}
+
+function makeBoard(total, keepCells) {
+  // 今ある空きマスの形を保ったまま作れるなら、それを優先する
+  if (keepCells) {
+    for (let a = 0; a < 40; a++) { const b = build(keepCells); if (b) return b; }
+  }
+  for (let a = 0; a < 500; a++) { const b = build(null, total); if (b) return b; }
+  return null;
+}
+
+// ---- 表示 ----
+let board = [];   // -1 = 空き, 0〜7 = 色
+let miss = 0;
+const boardEl = document.getElementById("board");
+const leftEl = document.getElementById("left");
+const missEl = document.getElementById("miss");
+const msgEl = document.getElementById("msg");
+
+function render() {
+  boardEl.innerHTML = "";
+  let left = 0;
+  for (let i = 0; i < N * N; i++) {
+    const d = document.createElement("div");
+    d.dataset.i = i;
+    if (board[i] < 0) {
+      d.className = "cell empty";
+    } else {
+      d.className = "cell tile";
+      d.style.background = COLORS[board[i]];
+      left++;
+    }
+    boardEl.appendChild(d);
+  }
+  leftEl.textContent = left;
+  missEl.textContent = miss;
+  return left;
+}
+
+function newGame() {
+  const b = makeBoard(N * N - START_EMPTY);
+  if (!b) {
+    msgEl.style.color = "#d84315";
+    msgEl.textContent = "盤面の生成に失敗しました。もう一度「新しいゲーム」を押してください";
+    return;
+  }
+  board = b;
+  miss = 0;
+  msgEl.textContent = "";
+  render();
+}
+
+// 全部消えたらクリア。消せる場所がなくなったら、残りを必ずクリアできる配置に並べ直す
+function checkEnd(left) {
+  if (left <= 1) {
+    if (left === 1) { board = board.map(() => -1); render(); }
+    msgEl.style.color = "#2e7d32";
+    msgEl.textContent = "🎉 クリア！おめでとう！";
+    return;
+  }
+  if (!findAnyMove(board)) {
+    const cells = [];
+    board.forEach((v, i) => { if (v >= 0) cells.push(i); });
+    const next = makeBoard(left, cells);
+    msgEl.style.color = "#d84315";
+    if (next) {
+      board = next;
+      msgEl.textContent = "消せる場所がなくなったので、残りを並べ直しました";
+      render();
+    } else {
+      msgEl.textContent = "これ以上消せません。「新しいゲーム」で最初からどうぞ";
+    }
+  }
+}
+
+boardEl.addEventListener("click", e => {
+  const t = e.target.closest(".empty");
+  if (!t) return;
+  const i = Number(t.dataset.i);
+  const rm = getRemovals(i, board);
+  if (!rm.length) {
+    miss++;
+    missEl.textContent = miss;
+    t.classList.add("shake");
+    setTimeout(() => t.classList.remove("shake"), 250);
+    return;
+  }
+  msgEl.textContent = "";
+  rm.forEach(j => board[j] = -1);
+  checkEnd(render());
+});
+
+document.getElementById("newBtn").addEventListener("click", newGame);
+document.getElementById("hintBtn").addEventListener("click", () => {
+  const m = findAnyMove(board);
+  if (!m) return;
+  const els = [m.cell, ...m.tiles].map(j => boardEl.children[j]);
+  els.forEach(el => el.classList.add("hint"));
+  setTimeout(() => els.forEach(el => el.classList.remove("hint")), 1200);
+});
+
+newGame();
 </script>
 </body>
 </html>
