@@ -47,7 +47,7 @@ const NC = COLORS.length;
 const DIRS = [[0,1],[0,-1],[1,0],[-1,0]];
 const START_EMPTY = 12;   // 最初の空きマスの数
 const TIME_LIMIT = 60;    // 制限時間(秒)
-const MISS_PENALTY = 3;   // ミスしたときに減る時間(秒)
+const MISS_PENALTY = 5;   // ミスしたときに減る時間(秒)
 
 const idx = (r, c) => r * N + c;
 const inBounds = (r, c) => r >= 0 && r < N && c >= 0 && c < N;
