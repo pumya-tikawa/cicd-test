@@ -7,6 +7,8 @@
 <style>
   body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 16px; }
   #info { margin: 8px 0; font-size: 18px; }
+  #info span.sep { margin: 0 6px; color: #999; }
+  #time.low { color: #d84315; font-weight: bold; }
   #msg { height: 24px; color: #d84315; font-size: 14px; }
   #board {
     display: grid; grid-template-columns: repeat(10, 1fr);
@@ -17,6 +19,8 @@
   .tile { pointer-events: none; }
   .empty { background: #ddd; cursor: pointer; }
   .empty:hover { background: #ccc; }
+  #board.over .empty { cursor: default; }
+  #board.over .empty:hover { background: #ddd; }
   .shake { animation: shake .25s; }
   .hint { outline: 3px solid #000; }
   @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
@@ -25,7 +29,12 @@
 </head>
 <body>
   <h1>カラータイル</h1>
-  <div id="info">残り: <span id="left">0</span> マス ／ ミス: <span id="miss">0</span></div>
+  <div id="info">
+    時間: <span id="time">0.0</span> 秒
+    <span class="sep">／</span>得点: <span id="score">0</span>
+    <span class="sep">／</span>残り: <span id="left">0</span> マス
+    <span class="sep">／</span>ミス: <span id="miss">0</span>
+  </div>
   <div id="msg"></div>
   <div id="board"></div>
   <button id="newBtn">新しいゲーム</button>
@@ -36,7 +45,9 @@ const N = 10;
 const COLORS = ["#e53935", "#fdd835", "#fb8c00", "#f48fb1", "#1e88e5", "#43a047", "#8e24aa", "#6d4c41"];
 const NC = COLORS.length;
 const DIRS = [[0,1],[0,-1],[1,0],[-1,0]];
-const START_EMPTY = 12; // 最初の空きマスの数
+const START_EMPTY = 12;   // 最初の空きマスの数
+const TIME_LIMIT = 60;    // 制限時間(秒)
+const MISS_PENALTY = 3;   // ミスしたときに減る時間(秒)
 
 const idx = (r, c) => r * N + c;
 const inBounds = (r, c) => r >= 0 && r < N && c >= 0 && c < N;
@@ -77,11 +88,7 @@ function findAnyMove(b) {
 // ---- 必ずクリアできる盤面の生成(消す手順を逆再生する) ----
 // 全マス空の状態から「空きマスcから上下左右に見える位置に、同じ色を2〜4個置く」を繰り返す。
 // 置いた順の逆にcをクリックしていけば、必ず全部消せる。
-// cells=null なら全マスに置ける。total=置くタイルの数
-function build(cells, total) {
-  const isTarget = new Array(N * N).fill(cells === null);
-  if (cells) cells.forEach(i => isTarget[i] = true);
-  if (total === undefined) total = cells.length;
+function build(total) {
   if (total < 2) return null;
   const b = new Array(N * N).fill(-1);
   let remaining = total;
@@ -98,7 +105,7 @@ function build(cells, total) {
         while (inBounds(rr, cc)) {
           const j = idx(rr, cc);
           if (b[j] >= 0) { first = b[j]; break; }
-          if (isTarget[j]) list.push(j);
+          list.push(j);
           rr += dr; cc += dc;
         }
         return { list, first };
@@ -131,21 +138,24 @@ function build(cells, total) {
   return b;
 }
 
-function makeBoard(total, keepCells) {
-  // 今ある空きマスの形を保ったまま作れるなら、それを優先する
-  if (keepCells) {
-    for (let a = 0; a < 40; a++) { const b = build(keepCells); if (b) return b; }
-  }
-  for (let a = 0; a < 500; a++) { const b = build(null, total); if (b) return b; }
+function makeBoard(total) {
+  for (let a = 0; a < 500; a++) { const b = build(total); if (b) return b; }
   return null;
 }
 
-// ---- 表示 ----
-let board = [];   // -1 = 空き, 0〜7 = 色
+// ---- 表示・状態 ----
+let board = [];       // -1 = 空き, 0〜7 = 色
 let miss = 0;
+let score = 0;
+let playing = false;
+let endTime = 0;      // ゲーム終了の時刻(ミスのたびに前倒しする)
+let timer = null;
+
 const boardEl = document.getElementById("board");
 const leftEl = document.getElementById("left");
 const missEl = document.getElementById("miss");
+const scoreEl = document.getElementById("score");
+const timeEl = document.getElementById("time");
 const msgEl = document.getElementById("msg");
 
 function render() {
@@ -165,7 +175,38 @@ function render() {
   }
   leftEl.textContent = left;
   missEl.textContent = miss;
+  scoreEl.textContent = score;
+  boardEl.classList.toggle("over", !playing);
   return left;
+}
+
+function showTime() {
+  const t = Math.max(0, (endTime - Date.now()) / 1000);
+  timeEl.textContent = t.toFixed(1);
+  timeEl.classList.toggle("low", t <= 10);
+  return t;
+}
+
+function tick() {
+  if (!playing) return;
+  if (showTime() <= 0) finish("time");
+}
+
+function finish(reason) {
+  playing = false;
+  clearInterval(timer);
+  showTime();
+  boardEl.classList.add("over");
+  if (reason === "clear") {
+    msgEl.style.color = "#2e7d32";
+    msgEl.textContent = "🎉 クリア！ 得点: " + score + " 点（残り時間 " + timeEl.textContent + " 秒）";
+  } else if (reason === "time") {
+    msgEl.style.color = "#d84315";
+    msgEl.textContent = "⏰ 時間切れ！ 得点: " + score + " 点";
+  } else {
+    msgEl.style.color = "#d84315";
+    msgEl.textContent = "消せるタイルがなくなりました。ゲーム終了！ 得点: " + score + " 点";
+  }
 }
 
 function newGame() {
@@ -177,52 +218,49 @@ function newGame() {
   }
   board = b;
   miss = 0;
+  score = 0;
+  playing = true;
   msgEl.textContent = "";
+  endTime = Date.now() + TIME_LIMIT * 1000;
+  clearInterval(timer);
+  timer = setInterval(tick, 100);
   render();
-}
-
-// 全部消えたらクリア。消せる場所がなくなったら、残りを必ずクリアできる配置に並べ直す
-function checkEnd(left) {
-  if (left <= 1) {
-    if (left === 1) { board = board.map(() => -1); render(); }
-    msgEl.style.color = "#2e7d32";
-    msgEl.textContent = "🎉 クリア！おめでとう！";
-    return;
-  }
-  if (!findAnyMove(board)) {
-    const cells = [];
-    board.forEach((v, i) => { if (v >= 0) cells.push(i); });
-    const next = makeBoard(left, cells);
-    msgEl.style.color = "#d84315";
-    if (next) {
-      board = next;
-      msgEl.textContent = "消せる場所がなくなったので、残りを並べ直しました";
-      render();
-    } else {
-      msgEl.textContent = "これ以上消せません。「新しいゲーム」で最初からどうぞ";
-    }
-  }
+  showTime();
 }
 
 boardEl.addEventListener("click", e => {
+  if (!playing) return;
   const t = e.target.closest(".empty");
   if (!t) return;
   const i = Number(t.dataset.i);
   const rm = getRemovals(i, board);
+
   if (!rm.length) {
+    // ミス：時間を減らす
     miss++;
     missEl.textContent = miss;
+    endTime -= MISS_PENALTY * 1000;
+    msgEl.style.color = "#d84315";
+    msgEl.textContent = "ミス！ -" + MISS_PENALTY + "秒";
     t.classList.add("shake");
     setTimeout(() => t.classList.remove("shake"), 250);
+    tick();
     return;
   }
+
+  // 消えたタイル1個につき1点
   msgEl.textContent = "";
+  score += rm.length;
   rm.forEach(j => board[j] = -1);
-  checkEnd(render());
+  const left = render();
+
+  if (left === 0) { finish("clear"); return; }
+  if (!findAnyMove(board)) finish("stuck");
 });
 
 document.getElementById("newBtn").addEventListener("click", newGame);
 document.getElementById("hintBtn").addEventListener("click", () => {
+  if (!playing) return;
   const m = findAnyMove(board);
   if (!m) return;
   const els = [m.cell, ...m.tiles].map(j => boardEl.children[j]);
